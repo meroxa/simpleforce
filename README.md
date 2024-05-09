@@ -2,6 +2,8 @@
 
 A simple Golang client for Salesforce
 
+:caution: This fork simply changes function signatures in [sobject.go](#sobject.go) to allow for proper error handling. The README below does not match the new function signatures. We plan to use this temporarily, until we re-write our own Salesforce client, or use an alternative. 
+
 [![GoDoc](https://godoc.org/github.com/simpleforce/simpleforce?status.svg)](https://godoc.org/github.com/simpleforce/simpleforce)
 
 ## Features
