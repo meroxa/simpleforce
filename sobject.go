@@ -168,7 +168,7 @@ func (obj *SObject) Update() error {
 	return nil
 }
 
-// Upsert creates SObject or updates existing SObject in place. 
+// Upsert creates SObject or updates existing SObject in place.
 // This has been modified to prioritize error handling over chained access.
 func (obj *SObject) Upsert() error {
 	log.Println(logPrefix, "ExternalID:", obj.ExternalID())
