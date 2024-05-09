@@ -104,7 +104,8 @@ func TestSObject_Get(t *testing.T) {
 	ownerID := queryResult.Records[0].StringField("OwnerId")
 
 	// Positive
-	obj := client.SObject("Case").Get(oid)
+	obj := client.SObject("Case")
+	obj.Get(oid)
 	if obj.ID() != oid || obj.StringField("OwnerId") != ownerID {
 		t.Fail()
 	}
@@ -121,7 +122,8 @@ func TestSObject_Get(t *testing.T) {
 	}
 
 	// Negative 1
-	obj = client.SObject("Case").Get("non-exist-id")
+	obj = client.SObject("Case")
+	obj.Get("non-exist-id")
 	if obj != nil {
 		t.Fail()
 	}
@@ -138,22 +140,25 @@ func TestSObject_Create(t *testing.T) {
 
 	// Positive
 	case1 := client.SObject("Case")
-	case1Result := case1.Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05")).
-		Set("Comments", "This case is created by simpleforce").
-		Create()
+	case1Result := case1.Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05"))
+	case1.Set("Comments", "This case is created by simpleforce")
+	case1.Create()
 	if case1Result == nil || case1Result.ID() == "" || case1Result.Type() != case1.Type() {
 		t.Fail()
 	} else {
-		log.Println(logPrefix, "Case created,", case1Result.Get().StringField("CaseNumber"))
+		case1Result.Get()
+		log.Println(logPrefix, "Case created,", case1Result.StringField("CaseNumber"))
 	}
 
 	// Positive 2
 	caseComment1 := client.SObject("CaseComment")
-	caseComment1Result := caseComment1.Set("ParentId", case1Result.ID()).
-		Set("CommentBody", "This comment is created by simpleforce & used for testing").
-		Set("IsPublished", true).
-		Create()
-	if caseComment1Result.Get().SObjectField("Case", "ParentId").ID() != case1Result.ID() {
+	caseComment1Result := caseComment1.Set("ParentId", case1Result.ID())
+	caseComment1.Set("CommentBody", "This comment is created by simpleforce & used for testing")
+	caseComment1.Set("IsPublished", true)
+	caseComment1.Create()
+	caseComment1Result.Get()
+	caseComment1Result.SObjectField("Case", "ParentId")
+	if caseComment1Result.ID() != case1Result.ID() {
 		t.Fail()
 	} else {
 		log.Println(logPrefix, "CaseComment created,", caseComment1Result.ID())
@@ -188,13 +193,13 @@ func TestSObject_Update(t *testing.T) {
 	client := requireClient(t, true)
 
 	// Positive
-	if client.SObject("Case").
-		Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05")).
-		Create().
-		Set("Subject", "Case subject updated by simpleforce").
-		Update().
-		Get().
-		StringField("Subject") != "Case subject updated by simpleforce" {
+	c := client.SObject("Case")
+	c.Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05"))
+	c.Create()
+	c.Set("Subject", "Case subject updated by simpleforce")
+	c.Update()
+	c.Get()
+	if c.StringField("Subject") != "Case subject updated by simpleforce" {
 		t.Fail()
 	}
 }
@@ -204,30 +209,32 @@ func TestSObject_Upsert(t *testing.T) {
 
 	// Positive create new object through upsert
 	case1 := client.SObject("Case")
-	case1Result := case1.Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05")).
-		Set("Comments", "This case is created by simpleforce").
-		Set("customExtIdField__c", uuid.NewString()).
-		Set("ExternalIDField", "customExtIdField__c").
-		Upsert()
+	case1Result := case1.Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05"))
+	case1Result.Set("Comments", "This case is created by simpleforce")
+	case1Result.Set("customExtIdField__c", uuid.NewString())
+	case1Result.Set("ExternalIDField", "customExtIdField__c")
+	case1Result.Upsert()
 	if case1Result == nil || case1Result.ID() == "" || case1Result.Type() != case1.Type() {
 		t.Fail()
 	} else {
-		log.Println(logPrefix, "Case created,", case1Result.Get().StringField("CaseNumber"))
+		case1Result.Get()
+		log.Println(logPrefix, "Case created,", case1Result.StringField("CaseNumber"))
 	}
 
 	// Positive update existing object through upsert
 	case2 := client.SObject("Case").
 		Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05")).
 		Set("customExtIdField__c", uuid.NewString())
-	case2Result := case2.Create()
 	case2.
 		Set("Subject", "Case subject updated by simpleforce").
 		Set("ExternalIDField", "customExtIdField__c").
 		Upsert()
-	if case2Result.Get().StringField("Subject") != "Case subject updated by simpleforce" {
+	case2.Get()
+	if case2.StringField("Subject") != "Case subject updated by simpleforce" {
 		t.Fail()
 	} else {
-		log.Println(logPrefix, "Case updated,", case2Result.Get().StringField("CaseNumber"))
+		case2.Get()
+		log.Println(logPrefix, "Case updated,", case2.StringField("CaseNumber"))
 	}
 
 	// Negative: object without type.
@@ -272,9 +279,9 @@ func TestSObject_Delete(t *testing.T) {
 
 	// Positive: create a case first then delete it and verify if it is gone.
 	case1 := client.SObject("Case").
-		Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05")).
-		Create().
-		Get()
+		Set("Subject", "Case created by simpleforce on "+time.Now().Format("2006/01/02 03:04:05"))
+	case1.Create()
+	case1.Get()
 	if case1 == nil || case1.ID() == "" {
 		t.Fatal()
 	}
@@ -282,7 +289,8 @@ func TestSObject_Delete(t *testing.T) {
 	if case1.Delete() != nil {
 		t.Fail()
 	}
-	case1 = client.SObject("Case").Get(caseID)
+	case1 = client.SObject("Case")
+	case1.Get(caseID)
 	if case1 != nil {
 		t.Fail()
 	}
@@ -293,26 +301,27 @@ func TestSObject_GetUpdate(t *testing.T) {
 	client := requireClient(t, true)
 
 	// Create a new case first.
-	case1 := client.SObject("Case").
-		Set("Subject", "Original").
-		Create().
-		Get()
+	case1 := client.SObject("Case")
+	case1.Set("Subject", "Original").
+		Create()
+	case1.Get()
 
 	// Query the case by ID, then update the Subject.
-	case2 := client.SObject("Case").
-		Get(case1.ID()).
-		Set("Subject", "Updated").
-		Update().
-		Get()
+	case2 := client.SObject("Case")
+		case2.Get(case1.ID())
+		case2.Set("Subject", "Updated").
+		Update()
+		case2.Get()
 
 	// Query the case by ID again and check if the Subject has been updated.
-	case3 := client.SObject("Case").
-		Get(case2.ID())
+	case3 := client.SObject("Case")
+	case3.Get(case2.ID())
 
 	if case3.StringField("Subject") != "Updated" {
 		t.Fail()
 	}
 
-	user1 := client.SObject("User").Create()
+	user1 := client.SObject("User")
+	user1.Create()
 	log.Println(user1.ID())
 }
